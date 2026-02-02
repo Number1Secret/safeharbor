@@ -40,7 +40,11 @@ dependencies = [
     # Security & Auth
     "PyJWT>=2.9.0",
     "passlib[bcrypt]>=1.7.4",
+    "bcrypt>=4.0.0,<5.0.0",
     "cryptography>=44.0.0",
+
+    # Sync DB driver (for Alembic migrations)
+    "psycopg2-binary>=2.9.0",
 
     # Date/Time
     "python-dateutil>=2.9.0",

@@ -6,6 +6,7 @@ Environment-based settings for the OBBB Tax Compliance Engine.
 
 from functools import lru_cache
 from typing import Literal
+from urllib.parse import urlparse
 
 from pydantic import Field, PostgresDsn, RedisDsn, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -19,6 +20,7 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
+        populate_by_name=True,
     )
 
     # Application
@@ -32,7 +34,8 @@ class Settings(BaseSettings):
     api_v1_prefix: str = "/api/v1"
     allowed_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
 
-    # Database
+    # Database — accepts either DATABASE_URL or individual fields
+    database_url_external: str = Field(default="", alias="DATABASE_URL")
     postgres_host: str = "localhost"
     postgres_port: int = 5432
     postgres_user: str = "safeharbor"
@@ -42,7 +45,15 @@ class Settings(BaseSettings):
     @computed_field
     @property
     def database_url(self) -> str:
-        """Construct async PostgreSQL connection URL."""
+        """Async PostgreSQL connection URL."""
+        if self.database_url_external:
+            url = self.database_url_external
+            # Replace postgres:// with postgresql+asyncpg://
+            if url.startswith("postgres://"):
+                url = "postgresql+asyncpg://" + url[len("postgres://"):]
+            elif url.startswith("postgresql://"):
+                url = "postgresql+asyncpg://" + url[len("postgresql://"):]
+            return url
         return str(
             PostgresDsn.build(
                 scheme="postgresql+asyncpg",
@@ -57,7 +68,14 @@ class Settings(BaseSettings):
     @computed_field
     @property
     def database_url_sync(self) -> str:
-        """Construct sync PostgreSQL URL for Alembic migrations."""
+        """Sync PostgreSQL URL for Alembic migrations."""
+        if self.database_url_external:
+            url = self.database_url_external
+            if url.startswith("postgres://"):
+                url = "postgresql://" + url[len("postgres://"):]
+            elif url.startswith("postgresql+asyncpg://"):
+                url = "postgresql://" + url[len("postgresql+asyncpg://"):]
+            return url
         return str(
             PostgresDsn.build(
                 scheme="postgresql",
@@ -69,7 +87,8 @@ class Settings(BaseSettings):
             )
         )
 
-    # Redis
+    # Redis — accepts either REDIS_URL or individual fields
+    redis_url_external: str = Field(default="", alias="REDIS_URL")
     redis_host: str = "localhost"
     redis_port: int = 6379
     redis_db: int = 0
@@ -77,7 +96,9 @@ class Settings(BaseSettings):
     @computed_field
     @property
     def redis_url(self) -> str:
-        """Construct Redis connection URL."""
+        """Redis connection URL."""
+        if self.redis_url_external:
+            return self.redis_url_external
         return str(
             RedisDsn.build(
                 scheme="redis",
