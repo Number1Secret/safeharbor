@@ -1,0 +1,119 @@
+[project]
+name = "safeharbor"
+version = "0.1.0"
+description = "SafeHarbor AI - The OBBB Tax Compliance Engine"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "Proprietary" }
+authors = [
+    { name = "SafeHarbor AI", email = "engineering@safeharbor.ai" }
+]
+
+dependencies = [
+    # Web Framework
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "python-multipart>=0.0.12",
+
+    # Database
+    "sqlalchemy[asyncio]>=2.0.36",
+    "asyncpg>=0.30.0",
+    "alembic>=1.14.0",
+    "greenlet>=3.1.0",
+
+    # Pydantic & Validation
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.6.0",
+    "email-validator>=2.2.0",
+
+    # MCP & AI
+    "fastmcp>=0.4.0",
+    "anthropic>=0.40.0",
+
+    # Background Tasks
+    "celery[redis]>=5.4.0",
+    "redis>=5.2.0",
+
+    # HTTP Client
+    "httpx>=0.28.0",
+
+    # Security & Auth
+    "PyJWT>=2.9.0",
+    "passlib[bcrypt]>=1.7.4",
+    "cryptography>=44.0.0",
+
+    # Date/Time
+    "python-dateutil>=2.9.0",
+
+    # PDF Generation
+    "reportlab>=4.0.0",
+
+    # Error Monitoring
+    "sentry-sdk[fastapi,celery,sqlalchemy]>=2.0.0",
+
+    # Utilities
+    "orjson>=3.10.0",
+    "tenacity>=9.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
+    "httpx>=0.28.0",
+    "ruff>=0.8.0",
+    "mypy>=1.13.0",
+    "pre-commit>=4.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["backend", "engines", "integrations", "workers", "compliance_vault"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+    "ARG",    # flake8-unused-arguments
+    "SIM",    # flake8-simplify
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "B008",   # do not perform function calls in argument defaults
+    "B904",   # allow raise without from inside except
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["backend", "engines", "integrations", "workers", "compliance_vault"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["celery.*", "passlib.*", "jwt.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]

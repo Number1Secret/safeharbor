@@ -1,0 +1,108 @@
+services:
+  # FastAPI Backend
+  - type: web
+    name: safeharbor-api
+    runtime: python
+    plan: starter
+    buildCommand: pip install -e ".[dev]"
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: safeharbor-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: safeharbor-redis
+          property: connectionString
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        generateValue: true
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_LEVEL
+        value: info
+
+  # Celery Worker
+  - type: worker
+    name: safeharbor-worker
+    runtime: python
+    plan: starter
+    buildCommand: pip install -e ".[dev]"
+    startCommand: celery -A workers.celery_app:app worker --loglevel=info --concurrency=4 -Q default,sync,calculations,compliance,notifications
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: safeharbor-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: safeharbor-redis
+          property: connectionString
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ENCRYPTION_KEY
+        sync: false
+
+  # Celery Beat Scheduler
+  - type: worker
+    name: safeharbor-beat
+    runtime: python
+    plan: starter
+    buildCommand: pip install -e ".[dev]"
+    startCommand: celery -A workers.celery_app:app beat --loglevel=info
+    envVars:
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: safeharbor-redis
+          property: connectionString
+
+  # Next.js Frontend
+  - type: web
+    name: safeharbor-frontend
+    runtime: node
+    plan: starter
+    buildCommand: cd frontend && npm install && npm run build
+    startCommand: cd frontend && npm start
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: safeharbor-api
+          property: host
+          envVarKey: API_HOST
+      - key: NODE_ENV
+        value: production
+
+  # MCP Server
+  - type: web
+    name: safeharbor-mcp
+    runtime: python
+    plan: starter
+    buildCommand: pip install -e ".[dev]"
+    startCommand: python -m engines.server
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: safeharbor-db
+          property: connectionString
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+databases:
+  - name: safeharbor-db
+    plan: starter
+    databaseName: safeharbor
+    postgresMajorVersion: 16
+
+  - name: safeharbor-redis
+    type: redis
+    plan: starter
+    maxmemoryPolicy: allkeys-lru
