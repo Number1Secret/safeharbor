@@ -4,8 +4,8 @@ services:
     name: safeharbor-api
     runtime: python
     plan: starter
-    buildCommand: pip install -e . && alembic upgrade head
-    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    buildCommand: pip install -e .
+    startCommand: bash scripts/start.sh
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
