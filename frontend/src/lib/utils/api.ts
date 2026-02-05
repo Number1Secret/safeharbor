@@ -32,10 +32,9 @@ class ApiClient {
     });
 
     if (response.status === 401) {
-      // Token expired or invalid — clear and redirect
+      // Token expired or invalid — clear token
       if (typeof window !== "undefined") {
         localStorage.removeItem("safeharbor_token");
-        window.location.href = "/login";
       }
       throw new Error("Authentication required");
     }

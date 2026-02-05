@@ -17,10 +17,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isLoading) return;
 
-    if (!isAuthenticated && !isPublicRoute) {
-      router.push("/login");
-    }
-
     if (isAuthenticated && isPublicRoute) {
       router.push("/dashboard");
     }
