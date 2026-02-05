@@ -1,11 +1,27 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import Script from "next/script";
 import Link from "next/link";
 import { useAuth } from "@/lib/providers/AuthProvider";
 
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: Record<string, unknown>) => void;
+          renderButton: (element: HTMLElement, config: Record<string, unknown>) => void;
+        };
+      };
+    };
+  }
+}
+
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
+
 export default function RegisterPage() {
-  const { register } = useAuth();
+  const { register, googleLogin } = useAuth();
   const [orgName, setOrgName] = useState("");
   const [ein, setEin] = useState("");
   const [name, setName] = useState("");
@@ -13,6 +29,37 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const googleButtonRef = useRef<HTMLDivElement>(null);
+
+  function initializeGoogleSignIn() {
+    if (!window.google || !GOOGLE_CLIENT_ID || !googleButtonRef.current) return;
+
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: async (response: { credential: string }) => {
+        setError("");
+        setLoading(true);
+        try {
+          await googleLogin(response.credential);
+        } catch (err: any) {
+          setError(err.message || "Google sign-up failed");
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
+
+    window.google.accounts.id.renderButton(googleButtonRef.current, {
+      theme: "outline",
+      size: "large",
+      width: "100%",
+      text: "signup_with",
+    });
+  }
+
+  useEffect(() => {
+    initializeGoogleSignIn();
+  }, []);
 
   function formatEin(value: string) {
     const digits = value.replace(/\D/g, "").slice(0, 9);
@@ -44,6 +91,14 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      {GOOGLE_CLIENT_ID && (
+        <Script
+          src="https://accounts.google.com/gsi/client"
+          onLoad={initializeGoogleSignIn}
+          strategy="afterInteractive"
+        />
+      )}
+
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow">
         <div>
           <h1 className="text-2xl font-bold text-center text-gray-900">
@@ -59,6 +114,20 @@ export default function RegisterPage() {
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
               {error}
             </div>
+          )}
+
+          {GOOGLE_CLIENT_ID && (
+            <>
+              <div ref={googleButtonRef} className="flex justify-center" />
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">or</span>
+                </div>
+              </div>
+            </>
           )}
 
           <div className="space-y-4">

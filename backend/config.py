@@ -120,6 +120,12 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60
     refresh_token_expire_days: int = 30
 
+    # Google OAuth
+    google_client_id: str = Field(
+        default="",
+        description="Google OAuth Client ID for Sign-In with Google",
+    )
+
     # Anthropic API
     anthropic_api_key: str = Field(
         default="",

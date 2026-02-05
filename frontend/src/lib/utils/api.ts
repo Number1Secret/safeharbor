@@ -63,6 +63,13 @@ class ApiClient {
     );
   }
 
+  async googleAuth(credential: string) {
+    return this.request<{ access_token: string; refresh_token: string; token_type: string }>(
+      "/auth/google",
+      { method: "POST", body: JSON.stringify({ credential }) }
+    );
+  }
+
   async getMe() {
     return this.request<any>("/auth/me");
   }

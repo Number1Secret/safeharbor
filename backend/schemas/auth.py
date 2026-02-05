@@ -56,6 +56,12 @@ class ChangePasswordRequest(BaseModel):
     new_password: str = Field(..., min_length=8, max_length=128)
 
 
+class GoogleAuthRequest(BaseModel):
+    """Schema for Google OAuth sign-in."""
+
+    credential: str = Field(..., description="Google ID token from Sign-In with Google")
+
+
 class UserResponse(BaseModel):
     """Public user profile response."""
 
