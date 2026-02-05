@@ -1,14 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/register"];
-
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  // Allow public paths
-  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
-    return NextResponse.next();
-  }
 
   // Allow static assets and API routes
   if (
@@ -19,8 +12,8 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Auth disabled — redirect root to dashboard
-  if (pathname === "/") {
+  // Auth disabled — redirect login/register/root to dashboard
+  if (pathname === "/" || pathname === "/login" || pathname === "/register") {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
